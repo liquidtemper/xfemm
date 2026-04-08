@@ -132,15 +132,12 @@ LoadMeshErr ESolver::LoadMesh(bool deleteFiles)
     char s[1024];
 
     //read meshnodes;
-    std::sprintf(infile,"%s.node",PathName.c_str());
+    sprintf(infile,"%s.node",PathName.c_str());
     if((fp=fopen(infile,"rt"))==NULL){
         return BADELEMENTFILE;
     }
-    if (fgets(s,1024,fp)==NULL)
-    {
-        return BADELEMENTFILE;
-    }
-    std::sscanf(s,"%i",&k);
+    fgets(s,1024,fp);
+    sscanf(s,"%i",&k);
     NumNodes=k;
 
     meshnode = new CNode[k];
@@ -671,8 +668,8 @@ bool ESolver::runSolver(bool verbose)
         std::string stats = "Problem Statistics:\n";
         stats += to_string(NumNodes) + " nodes\n";
         stats += to_string(NumEls) + " elements\n";
+        stats += "Precision: " + to_string(Precision) + "\n";
         PrintMessage(stats.c_str());
-        std::cout << "Precision: " << Precision << "\n";
     }
 
     CBigLinProb L;

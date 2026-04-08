@@ -1238,8 +1238,8 @@ bool FSolver::runSolver(bool verbose)
         std::string stats = "Problem Statistics:\n";
         stats += to_string(NumNodes) + " nodes\n";
         stats += to_string(NumEls) + " elements\n";
+        stats += "Precision: " + to_string(Precision) + "\n";
         PrintMessage(stats.c_str());
-        std::cout << "Precision: " << Precision << "\n";
     }
 
     if (Frequency == 0)
@@ -1305,7 +1305,7 @@ bool FSolver::runSolver(bool verbose)
             {
                 WarnMessage("Harmonic planar incremental permeability problems are work in progress. RESULTS WON'T BE VALID!\n");
             }
-            if (!Harmonic2D(L,verbose))
+            if (!Harmonic2D(L))
             {
                 WarnMessage("Couldn't solve the problem\n");
                 return false;
@@ -1319,7 +1319,7 @@ bool FSolver::runSolver(bool verbose)
                 WarnMessage("Cannot handle harmonic axisymmetric incremental problems.\n");
                 return false;
             }
-            if (!HarmonicAxisymmetric(L,verbose))
+            if (!HarmonicAxisymmetric(L))
             {
                 WarnMessage("Couldn't solve the problem\n");
                 return false;

@@ -116,9 +116,7 @@ function varargout = mfemm_setup(varargin)
             || ~(exist('fpproc_interface_mex', 'file') == 3) ...
             || options.ForceMexRecompile
 
-        if options.Verbose
-            fprintf('Compiling mex functions for mfemm.\n');
-        end
+        fprintf('Compiling mex functions for mfemm.\n');
 
         CC = onCleanup(@() cd(pwd));
         cd (thisfilepath);
@@ -193,9 +191,7 @@ function varargout = mfemm_setup(varargin)
 
     else
 
-        if options.Verbose
-            fprintf('Not compiling mex functions as they already exist.\n');
-        end
+        fprintf('Not compiling mex functions as they already exist.\n');
 
     end
 

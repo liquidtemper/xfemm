@@ -902,8 +902,6 @@ function [FemmProblem, Solution] = loadfemmsolution(filename, problemonly)
 
                 s = fgetl(fid);
 
-                % fixed: moved here to be set before MeshedSideLength default load!
-                arcsegprops.MaxSegDegrees = C{4};
                 
                 switch ftype.(FemmProblem.ProbInfo.Domain)
                     
@@ -916,7 +914,7 @@ function [FemmProblem, Solution] = loadfemmsolution(filename, problemonly)
                             if C{8} > 0
                                 arcsegprops.MeshedSideLength = C{8};
                             else
-                                arcsegprops.MeshedSideLength = arcsegprops.MaxSegDegrees; % ###note: same as MeshedSideLength by default... 
+                                arcsegprops.MeshedSideLength = arcsegprops.MaxSegDegrees;
                             end
                         end
 
@@ -927,7 +925,7 @@ function [FemmProblem, Solution] = loadfemmsolution(filename, problemonly)
                         arcsegprops.InConductor = C{8};
                 end
                 
-                
+                arcsegprops.MaxSegDegrees = C{4};
 
                 arcsegprops.BoundaryMarker = C{5};
                 
@@ -1027,9 +1025,6 @@ function [FemmProblem, Solution] = loadfemmsolution(filename, problemonly)
         %                     % convert from a side length to area constraint
         %                     FemmProblem.BlockLabels(i).MaxArea = pi * FemmProblem.BlockLabels(i).MaxArea * FemmProblem.BlockLabels(i).MaxArea / 4;
                         end
-                        
-                        % ###fix: this one is expected in addblocklabel_mfemm(), but not set anywhere when problem loaded from file (only set when problem generated from scratch)!
-                        FemmProblem.BlockLabels(i).IsMagnet = ~isnan(FemmProblem.BlockLabels(i).MagDir); 
                 
                     case ftype.heatflow
                         

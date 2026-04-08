@@ -1130,9 +1130,7 @@ int FMesher::DoPeriodicBCTriangulation(string PathName)
 #endif // DEBUG
 			pbc.BdryName=problem->lineproplist[i]->BdryName;
 			pbc.BdryFormat = problem->lineproplist[i]->BdryFormat - 4; // 0 for pbc, 1 for apbc
-
 			pbc.antiPeriodic = problem->lineproplist[i]->isPeriodic(CBoundaryProp::PeriodicityType::AntiPeriodic);
-
 			pbclst.push_back(pbc.clone());
 		}
 

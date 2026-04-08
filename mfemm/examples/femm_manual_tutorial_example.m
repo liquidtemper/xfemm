@@ -69,7 +69,7 @@
 % inches using optional parameter-value pairs.
 FemmProblem = newproblem_mfemm('axi', ...
                                'Frequency', 0, ...
-                               'LengthUnits', 'inches');
+                               'LengthUnits', 'mm');
                            
 %%
 %
@@ -252,10 +252,12 @@ end
 %%
 %
 % Create a .fem file describing the problem on disk
-filename = 'mag_tutorial.fem';
+filename = 'C:\GIT\xfemm\test\MotorFEM_2502882661.fem';
+%%
 writefemmfile(filename, FemmProblem);
 
 %%
+% addpath(genpath('C:\xfemm\bin'));
 %
 % mesh the problem using fmesher. We could have called fmesher with the
 % FemmProblem directly, i.e.

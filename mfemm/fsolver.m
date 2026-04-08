@@ -61,10 +61,7 @@ function ansfile = fsolver(filename, verbose, deletemeshfiles)
         error('The following required files were missing\n%sPerhaps you need to rerun fmesher?', missingfilestr);
     end
 
-    err = mexfsolver(filename, double(verbose), double(deletemeshfiles));
-    if err
-        error(sprintf('mexfsolver() failed with error code %d!',err));
-    end
+    mexfsolver(filename, double(verbose), double(deletemeshfiles));
 
     ansfile = [filename, '.ans'];
     

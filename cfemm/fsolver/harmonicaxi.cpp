@@ -31,7 +31,7 @@
 
 // #define NEWTON
 
-int FSolver::HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose)
+int FSolver::HarmonicAxisymmetric(CBigComplexLinProb &L)
 {
     int i,j,k,s,flag,ww,Iter=0;
     int pctr;
@@ -208,8 +208,7 @@ int FSolver::HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose)
 
 //		TheView->SetDlgItemText(IDC_FRAME1,"Matrix Construction");
 //		TheView->m_prog1.SetPos(0);
-	if(verbose)
-            printf("Matrix Construction\n");
+        printf("Matrix Construction\n");
         pctr=0;
 
         if (Iter>0) L.Wipe();
@@ -748,7 +747,7 @@ int FSolver::HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose)
             if (L.Precision<Precision) L.Precision=Precision;
         }
 
-        if (L.PBCGSolveMod(Iter,verbose)==0) return 0;
+        if (L.PBCGSolveMod(Iter)==0) return 0;
 
         if (LinearFlag==false)
         {
@@ -783,8 +782,7 @@ int FSolver::HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose)
             else sprintf(outstr,"Successive Approx(%i) Relax=%.4g\n",Iter,Relax);
 //#endif
 //        TheView->SetDlgItemText(IDC_FRAME2,outstr);
-            if(verbose)
-                printf("%s\n", outstr);
+            printf("%s\n", outstr);
             j=(int)  (100.*log10(res)/(log10(Precision)+2.));
             if (j>100) j=100;
 //        TheView->m_prog2.SetPos(j);

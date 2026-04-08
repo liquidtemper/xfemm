@@ -102,10 +102,10 @@ public:
      * \endinternal
      */
     int WriteStatic2D(CBigLinProb &L);
-    int Harmonic2D(CBigComplexLinProb &L,bool verbose=false);
+    int Harmonic2D(CBigComplexLinProb &L);
     int WriteHarmonic2D(CBigComplexLinProb &L);
     int StaticAxisymmetric(CBigLinProb &L);
-    int HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose=false);
+    int HarmonicAxisymmetric(CBigComplexLinProb &L);
     void GetFillFactor(int lbl);
     double ElmArea(int i);
 
