@@ -57,7 +57,7 @@ int FSolver::StaticAxisymmetric(CBigLinProb &L)
     int bIncremental = 0;
 	double murel, muinc;
 
-	if (!previousSolutionFile.empty()) bIncremental = PrevType;
+	if (!previousSolutionFile.empty() && (PrevType == 1 || PrevType == 2)) bIncremental = PrevType;
 
     res=0;
 
@@ -65,6 +65,12 @@ int FSolver::StaticAxisymmetric(CBigLinProb &L)
     V_old=(double *) calloc(NumNodes,sizeof(double));
 
     for(i=0; i<NumBlockLabels; i++) GetFillFactor(i);
+
+    if (!Aprev.empty() && (PrevType == 3 || PrevType == 4))
+    {
+        for (j = 0; j < NumNodes && j < (int)Aprev.size(); j++)
+            L.V[j] = Aprev[j];
+    }
 
     extRo*=units[LengthUnits];
     extRi*=units[LengthUnits];
@@ -417,7 +423,8 @@ int FSolver::StaticAxisymmetric(CBigLinProb &L)
                 r=(meshnode[n[j]].x+meshnode[n[k]].x)/2.;
                 // need to scale so that everything is in proper units...
                 // conversion is 0.0001
-                K=-0.0001*r*blockproplist[El->blk].H_c*(
+                double Hc = (El->Hc >= 0.) ? El->Hc : blockproplist[El->blk].H_c;
+                K=-0.0001*r*Hc*(
                       cos(t*PI/180.)*(meshnode[n[k]].x-meshnode[n[j]].x) +
                       sin(t*PI/180.)*(meshnode[n[k]].y-meshnode[n[j]].y) );
                 be[j]+=K;

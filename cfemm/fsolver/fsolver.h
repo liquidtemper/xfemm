@@ -85,6 +85,7 @@ public:
      * \endinternal
      */
     bool loadPreviousSolution(bool loadAprev);
+    bool loadPreviousSolutionHcMap();
     //bool LoadMeshFromPrevSolution(bool loadAprev);
     bool LoadMeshNodesFromSolution(bool loadA, FILE* fp);
     bool LoadMeshElementsFromSolution(FILE* fp);
@@ -102,10 +103,10 @@ public:
      * \endinternal
      */
     int WriteStatic2D(CBigLinProb &L);
-    int Harmonic2D(CBigComplexLinProb &L);
+    int Harmonic2D(CBigComplexLinProb &L,bool verbose=false);
     int WriteHarmonic2D(CBigComplexLinProb &L);
     int StaticAxisymmetric(CBigLinProb &L);
-    int HarmonicAxisymmetric(CBigComplexLinProb &L);
+    int HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose=false);
     void GetFillFactor(int lbl);
     double ElmArea(int i);
 

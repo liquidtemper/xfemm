@@ -53,6 +53,7 @@ femmsolver::CMElement::CMElement()
     , b2{0,0,0}
     , magdir(0)
     , Jprev(0.0)
+    , Hc(-1.0)
 {
 }
 

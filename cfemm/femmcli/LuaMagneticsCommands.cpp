@@ -995,7 +995,7 @@ int femmcli::LuaMagneticsCommands::luaGapIntegral(lua_State *L)
 		return 1;
     }
 
-    IntegralType = (int) lua_todouble(L,1);
+    IntegralType = (int) lua_todouble(L,2);
     if((IntegralType<0) || (IntegralType>6))
     {
         lua_error(L, "Invalid gap integral type selected");
@@ -2029,15 +2029,17 @@ int femmcli::LuaMagneticsCommands::luaSetPrevious(lua_State *L)
 {
     int n = lua_gettop(L);
 
-    luaExpectParameterCount(L, 1);
+    if (!luaExpectParameterCount(L, 1, 2))
+        return 0;
     if (n>0)
     {
         auto luaInstance = LuaInstance::instance(L);
         std::shared_ptr<FemmState> femmState = std::dynamic_pointer_cast<FemmState>(luaInstance->femmState());
         std::shared_ptr<femm::FemmProblem> doc = femmState->femmDocument();
 
-        std::string prev = lua_tostring(L,n);
+        std::string prev = lua_tostring(L,1);
         doc->previousSolutionFile=prev;
+        doc->PrevType = (n > 1) ? static_cast<int>(lua_tonumber(L,2)) : 0;
     }
 
     return 0;

@@ -235,7 +235,10 @@ bool FSolver::LoadProblemFile ()
             loadAprev = true;
         }
 
-        return loadPreviousSolution(loadAprev);
+        if (!loadPreviousSolution(loadAprev))
+            return false;
+        if (PrevType == 4 && !loadPreviousSolutionHcMap())
+            return false;
     }
 
     // do some precomputations
@@ -245,7 +248,7 @@ bool FSolver::LoadProblemFile ()
         if (prop.BHpoints>0)
         {
             debug << "doing precomputations for material " << prop.BlockName << "\n";
-            if(PrevType != 0)
+            if(PrevType == 1 || PrevType == 2)
             {
                 // first time through was just to get MuMax from AC curve...
                 // -> backup Hdata and Bdata:
@@ -1080,6 +1083,97 @@ bool FSolver::loadPreviousSolution(bool loadAprev)
     return true;
 }
 
+bool FSolver::loadPreviousSolutionHcMap()
+{
+    if (previousSolutionFile.empty() || meshele.empty())
+        return false;
+
+    std::string mapFile = previousSolutionFile + ".demag";
+    FILE *fp = fopen(mapFile.c_str(), "rt");
+    if (fp == NULL)
+    {
+        std::string warn = "Failed to open the specified element coercivity map:\n" + mapFile + "\n";
+        WarnMessage(warn.c_str());
+        return false;
+    }
+
+    for (auto &elem : meshele)
+        elem.Hc = -1.;
+
+    char s[1024], q[256];
+    int expectedEls = -1;
+    int expectedOverrides = -1;
+    int loadedOverrides = 0;
+
+    while (fgets(s, sizeof(s), fp) != NULL)
+    {
+        q[0] = '\0';
+        sscanf(s, "%255s", q);
+
+        if (q[0] == '\0' || q[0] == ';' || q[0] == '#')
+            continue;
+
+        if (_strnicmp(q, "[numelements]", 13) == 0)
+        {
+            char *v = StripKey(s);
+            sscanf(v, "%i", &expectedEls);
+            continue;
+        }
+
+        if (_strnicmp(q, "[numoverrides]", 14) == 0)
+        {
+            char *v = StripKey(s);
+            sscanf(v, "%i", &expectedOverrides);
+            continue;
+        }
+
+        if (q[0] == '[')
+            continue;
+
+        int idx;
+        double hc;
+        if (sscanf(s, "%i%lf", &idx, &hc) == 2)
+        {
+            if (idx < 0 || idx >= NumEls)
+            {
+                fclose(fp);
+                char warnbuf[1024];
+                SNPRINTF(warnbuf, sizeof(warnbuf),
+                         "Element coercivity map index %i out of range (0..%i)\n",
+                         idx, NumEls - 1);
+                WarnMessage(warnbuf);
+                return false;
+            }
+            meshele[idx].Hc = hc;
+            loadedOverrides++;
+        }
+    }
+
+    fclose(fp);
+
+    if (expectedEls >= 0 && expectedEls != NumEls)
+    {
+        char warnbuf[1024];
+        SNPRINTF(warnbuf, sizeof(warnbuf),
+                 "Element coercivity map element count mismatch\n%i != %i\n",
+                 expectedEls, NumEls);
+        WarnMessage(warnbuf);
+        return false;
+    }
+
+    if (expectedOverrides >= 0 && expectedOverrides != loadedOverrides)
+    {
+        char warnbuf[1024];
+        SNPRINTF(warnbuf, sizeof(warnbuf),
+                 "Element coercivity map override count mismatch\n%i != %i\n",
+                 expectedOverrides, loadedOverrides);
+        WarnMessage(warnbuf);
+        return false;
+    }
+
+    return true;
+}
+
 void FSolver::GetFillFactor(int lbl)
 {
     // Get the fill factor associated with a stranded and
@@ -1238,13 +1332,13 @@ bool FSolver::runSolver(bool verbose)
         std::string stats = "Problem Statistics:\n";
         stats += to_string(NumNodes) + " nodes\n";
         stats += to_string(NumEls) + " elements\n";
-        stats += "Precision: " + to_string(Precision) + "\n";
         PrintMessage(stats.c_str());
+        std::cout << "Precision: " << Precision << "\n";
     }
 
     if (Frequency == 0)
     {
-        if (!previousSolutionFile.empty() && PrevType != 0)
+        if (!previousSolutionFile.empty() && (PrevType == 1 || PrevType == 2))
         {
             WarnMessage("Cannot handle incremental permeability problems with frequency 0.\n");
             return false;
@@ -1305,7 +1399,7 @@ bool FSolver::runSolver(bool verbose)
             {
                 WarnMessage("Harmonic planar incremental permeability problems are work in progress. RESULTS WON'T BE VALID!\n");
             }
-            if (!Harmonic2D(L))
+            if (!Harmonic2D(L,verbose))
             {
                 WarnMessage("Couldn't solve the problem\n");
                 return false;
@@ -1319,7 +1413,7 @@ bool FSolver::runSolver(bool verbose)
                 WarnMessage("Cannot handle harmonic axisymmetric incremental problems.\n");
                 return false;
             }
-            if (!HarmonicAxisymmetric(L))
+            if (!HarmonicAxisymmetric(L,verbose))
             {
                 WarnMessage("Couldn't solve the problem\n");
                 return false;

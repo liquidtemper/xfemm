@@ -70,7 +70,7 @@ int FSolver::Static2D(CBigLinProb &L)
     int bIncremental = MS_LEGACY_FALSE;
 	double murel, muinc;
 
-	if (!previousSolutionFile.empty()) bIncremental = PrevType;
+	if (!previousSolutionFile.empty() && (PrevType == 1 || PrevType == 2)) bIncremental = PrevType;
 
     res=0;
     femmsolver::CMElement *El;
@@ -79,6 +79,12 @@ int FSolver::Static2D(CBigLinProb &L)
     for(i = 0; i < NumBlockLabels; i++)
     {
         GetFillFactor(i);
+    }
+
+    if (!Aprev.empty() && (PrevType == 3 || PrevType == 4))
+    {
+        for (j = 0; j < NumNodes && j < (int)Aprev.size(); j++)
+            L.V[j] = Aprev[j];
     }
 
     // check to see if any circuits have been defined and process them;
@@ -590,7 +596,8 @@ int FSolver::Static2D(CBigLinProb &L)
                 }
                 // need to scale so that everything is in proper units...
                 // conversion is 0.0001
-                K = 0.0001*blockproplist[El->blk].H_c*(
+                double Hc = (El->Hc >= 0.) ? El->Hc : blockproplist[El->blk].H_c;
+                K = 0.0001*Hc*(
                         cos(t*PI/180.)*(meshnode[n[k]].x-meshnode[n[j]].x) +
                         sin(t*PI/180.)*(meshnode[n[k]].y-meshnode[n[j]].y) )/2.;
                 be[j]+=K;
