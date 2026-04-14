@@ -45,6 +45,9 @@ namespace femm {
  * int   - number of the boundary property, 1-indexed
  * int   - hide in postprocessor
  * int   - number of group
+ * [int   - virtual gap enabled flag (magnetics extension)]
+ * [float - virtual gap physical thickness]
+ * [float - virtual gap mesh thickness, <=0 means auto]
  * \endverbatim
  */
 class CSegment
@@ -67,6 +70,9 @@ public:
     std::string BoundaryMarkerName;   ///< boundary property name
     std::string InConductorName;      ///< additional property for hpproc
     int cnt; ///< used by mesher for internal book keeping
+    bool VirtualGapEnabled; ///< magnetics-only extension
+    double VirtualGapPhysical; ///< physical gap thickness represented by this segment
+    double VirtualGapMesh; ///< mesh ribbon thickness, <=0 means auto
 
     /**
      * @brief clone returns a copy of the CSegment that is memory managed using a unique_ptr.

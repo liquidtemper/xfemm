@@ -829,7 +829,7 @@ int FSolver::Harmonic2D(CBigComplexLinProb &L,bool verbose)
             L.Precision=std::min(1.e-4,0.001*res);
             if (L.Precision<Precision) L.Precision=Precision;
         }
-        if (L.PBCGSolveMod(Iter,verbose)==false) return false;
+        if (L.PBCGSolveMod(Iter)==false) return false;
 
 
         if (LinearFlag==false)

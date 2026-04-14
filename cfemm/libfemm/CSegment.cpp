@@ -43,6 +43,9 @@ CSegment::CSegment()
     , BoundaryMarkerName("<None>")
     , InConductorName("<None>")
     , cnt(0)
+    , VirtualGapEnabled(false)
+    , VirtualGapPhysical(0.)
+    , VirtualGapMesh(-1.)
 {
 }
 
@@ -65,4 +68,3 @@ bool CSegment::isInConductor() const
 {
     return (InConductor!=-1);
 }
-

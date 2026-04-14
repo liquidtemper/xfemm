@@ -47,6 +47,7 @@
 #include <fstream>
 #include <iomanip>
 #include <malloc.h>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -82,6 +83,327 @@ enum class SegmentMarkerInfo {
     FromCnt ///< Generate marker infor from cnt field of segments.
     , FromProblem ///< Generate marker info using the problem descripton
 };
+
+constexpr const char* VirtualGapMaterialPrefix = "__virtual_gap_";
+
+double virtualGapMinimumMeshThickness(const FemmProblem &problem)
+{
+    constexpr double minimumMeters = 1.e-4; // 0.1 mm floor for auto ribbon thickness
+    return minimumMeters / LengthConvMeters[problem.LengthUnits];
+}
+
+double virtualGapNodeTolerance(double ribbonThickness)
+{
+    return (std::max)(ribbonThickness * 1.e-6, 1.e-9);
+}
+
+double cross2d(const CComplex &a, const CComplex &b)
+{
+    return Re(a) * Im(b) - Im(a) * Re(b);
+}
+
+bool isProperSegmentIntersection(const CComplex &a0, const CComplex &a1,
+                                 const CComplex &b0, const CComplex &b1,
+                                 double tol)
+{
+    const CComplex da = a1 - a0;
+    const CComplex db = b1 - b0;
+    const CComplex r = b0 - a0;
+    const double denom = cross2d(da, db);
+    if (fabs(denom) <= tol * (std::max)(abs(da), abs(db)))
+        return false;
+
+    const double ua = cross2d(r, db) / denom;
+    const double ub = cross2d(r, da) / denom;
+    return (ua > tol && ua < 1. - tol && ub > tol && ub < 1. - tol);
+}
+
+bool isPeriodicBoundarySegment(const FemmProblem &problem, const CSegment &seg)
+{
+    int markerIndex = seg.BoundaryMarker;
+    if (markerIndex < 0 && seg.hasBoundaryMarker())
+    {
+        auto it = problem.lineMap.find(seg.BoundaryMarkerName);
+        if (it != problem.lineMap.end())
+            markerIndex = it->second;
+    }
+
+    if (markerIndex < 0 || markerIndex >= static_cast<int>(problem.lineproplist.size()))
+        return false;
+
+    return problem.lineproplist[markerIndex]->isPeriodic();
+}
+
+std::string nextVirtualGapMaterialName(const FemmProblem &problem)
+{
+    int nextIndex = static_cast<int>(problem.blockproplist.size());
+    std::string name;
+    do
+    {
+        std::ostringstream ss;
+        ss << VirtualGapMaterialPrefix << nextIndex++;
+        name = ss.str();
+    }
+    while (problem.blockMap.find(name) != problem.blockMap.end());
+    return name;
+}
+
+bool addVirtualGapMaterial(FemmProblem &problem,
+                           double physicalThickness,
+                           double meshThickness,
+                           std::string *materialName,
+                           int *materialIndex)
+{
+    auto material = std::unique_ptr<CMSolverMaterialProp>(new CMSolverMaterialProp());
+    material->BlockName = nextVirtualGapMaterialName(problem);
+    material->mu_x = meshThickness / physicalThickness;
+    material->mu_y = material->mu_x;
+    material->Cduct = 0.;
+    material->H_c = 0.;
+    material->BHpoints = 0;
+    material->Bdata.clear();
+    material->Hdata.clear();
+    material->clearSlopes();
+    material->LamType = 0;
+    material->LamFill = 1.;
+    material->J = 0.;
+    material->Theta_m = 0.;
+
+    problem.blockproplist.push_back(std::move(material));
+    problem.updateBlockMap();
+
+    auto it = problem.blockMap.find(problem.blockproplist.back()->BlockName);
+    if (it == problem.blockMap.end())
+        return false;
+
+    *materialName = problem.blockproplist.back()->BlockName;
+    *materialIndex = it->second;
+    return true;
+}
+
+bool virtualGapRibbonConflicts(const FemmProblem &problem,
+                               int segIndex,
+                               const std::vector<CComplex> &polygon,
+                               double halfThickness)
+{
+    const double tol = virtualGapNodeTolerance(halfThickness);
+
+    // Check self-intersection on the proposed closed ribbon.
+    for (size_t i = 0; i < polygon.size(); ++i)
+    {
+        const size_t iNext = (i + 1) % polygon.size();
+        for (size_t j = i + 2; j < polygon.size(); ++j)
+        {
+            const size_t jNext = (j + 1) % polygon.size();
+            if (i == 0 && jNext == polygon.size() - 1)
+                continue;
+            if (jNext == i)
+                continue;
+            if (isProperSegmentIntersection(polygon[i], polygon[iNext], polygon[j], polygon[jNext], tol))
+                return true;
+        }
+    }
+
+    for (size_t i = 0; i < polygon.size(); ++i)
+    {
+        const CComplex midpoint = 0.5 * (polygon[i] + polygon[(i + 1) % polygon.size()]);
+
+        for (int nodeIndex = 0; nodeIndex < static_cast<int>(problem.nodelist.size()); ++nodeIndex)
+        {
+            if (nodeIndex == problem.linelist[segIndex]->n0 || nodeIndex == problem.linelist[segIndex]->n1)
+                continue;
+
+            const CComplex other(problem.nodelist[nodeIndex]->x, problem.nodelist[nodeIndex]->y);
+            if (abs(other - polygon[i]) < tol || abs(other - midpoint) < tol)
+                return true;
+        }
+
+        for (int lineIndex = 0; lineIndex < static_cast<int>(problem.linelist.size()); ++lineIndex)
+        {
+            if (lineIndex == segIndex)
+                continue;
+
+            if (problem.shortestDistanceFromSegment(Re(polygon[i]), Im(polygon[i]), lineIndex) < tol)
+                return true;
+            if (problem.shortestDistanceFromSegment(Re(midpoint), Im(midpoint), lineIndex) < tol)
+                return true;
+        }
+
+        for (const auto &arc : problem.arclist)
+        {
+            if (problem.shortestDistanceFromArc(polygon[i], *arc) < tol)
+                return true;
+            if (problem.shortestDistanceFromArc(midpoint, *arc) < tol)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+bool expandVirtualGapSegment(FemmProblem &problem, int segIndex, int (*WarnMessage)(const char*, ...))
+{
+    const CSegment source = *problem.linelist[segIndex];
+    const CComplex a(problem.nodelist[source.n0]->x, problem.nodelist[source.n0]->y);
+    const CComplex b(problem.nodelist[source.n1]->x, problem.nodelist[source.n1]->y);
+    const double physicalThickness = source.VirtualGapPhysical;
+    const double meshThickness = (source.VirtualGapMesh > 0.)
+            ? source.VirtualGapMesh
+            : (std::max)(5. * physicalThickness, virtualGapMinimumMeshThickness(problem));
+    const double halfThickness = 0.5 * meshThickness;
+    const double lineLength = abs(b - a);
+
+    if (physicalThickness <= 0.)
+    {
+        WarnMessage("Virtual gap requires VirtualGapPhysical > 0.\n");
+        return false;
+    }
+    if (lineLength <= meshThickness)
+    {
+        WarnMessage("Virtual gap ribbon thickness must be smaller than segment length.\n");
+        return false;
+    }
+    if (isPeriodicBoundarySegment(problem, source))
+    {
+        WarnMessage("Virtual gap is not supported on periodic or antiperiodic boundary segments.\n");
+        return false;
+    }
+
+    const CComplex tangent = (b - a) / lineLength;
+    const CComplex normal = I * tangent;
+    const CComplex aPlus = a + halfThickness * normal;
+    const CComplex bPlus = b + halfThickness * normal;
+    const CComplex bMinus = b - halfThickness * normal;
+    const CComplex aMinus = a - halfThickness * normal;
+    const std::vector<CComplex> polygon = { a, aPlus, bPlus, b, bMinus, aMinus };
+
+    if (virtualGapRibbonConflicts(problem, segIndex, polygon, halfThickness))
+    {
+        WarnMessage("Virtual gap ribbon conflicts with nearby geometry.\n");
+        return false;
+    }
+
+    std::string materialName;
+    int materialIndex = -1;
+    if (!addVirtualGapMaterial(problem, physicalThickness, meshThickness, &materialName, &materialIndex))
+    {
+        WarnMessage("Unable to create autogenerated virtual gap material.\n");
+        return false;
+    }
+
+    problem.linelist[segIndex]->IsSelected = true;
+    problem.deleteSelectedSegments();
+
+    const double nodeTol = virtualGapNodeTolerance(meshThickness);
+    if (!problem.addNode(Re(aPlus), Im(aPlus), nodeTol)
+            || !problem.addNode(Re(bPlus), Im(bPlus), nodeTol)
+            || !problem.addNode(Re(bMinus), Im(bMinus), nodeTol)
+            || !problem.addNode(Re(aMinus), Im(aMinus), nodeTol))
+    {
+        WarnMessage("Unable to create virtual gap ribbon nodes.\n");
+        return false;
+    }
+
+    const int aPlusNode = problem.closestNode(Re(aPlus), Im(aPlus));
+    const int bPlusNode = problem.closestNode(Re(bPlus), Im(bPlus));
+    const int bMinusNode = problem.closestNode(Re(bMinus), Im(bMinus));
+    const int aMinusNode = problem.closestNode(Re(aMinus), Im(aMinus));
+
+    CSegment ribbonSeg;
+    ribbonSeg.MaxSideLength = halfThickness;
+    ribbonSeg.Hidden = source.Hidden;
+    ribbonSeg.InGroup = source.InGroup;
+    ribbonSeg.BoundaryMarker = -1;
+    ribbonSeg.BoundaryMarkerName = "<None>";
+    ribbonSeg.InConductor = -1;
+    ribbonSeg.InConductorName = "<None>";
+    ribbonSeg.VirtualGapEnabled = false;
+    ribbonSeg.VirtualGapPhysical = 0.;
+    ribbonSeg.VirtualGapMesh = -1.;
+
+    if (!problem.addSegment(source.n0, aPlusNode, &ribbonSeg, nodeTol)
+            || !problem.addSegment(aPlusNode, bPlusNode, &ribbonSeg, nodeTol)
+            || !problem.addSegment(bPlusNode, source.n1, &ribbonSeg, nodeTol)
+            || !problem.addSegment(source.n1, bMinusNode, &ribbonSeg, nodeTol)
+            || !problem.addSegment(bMinusNode, aMinusNode, &ribbonSeg, nodeTol)
+            || !problem.addSegment(aMinusNode, source.n0, &ribbonSeg, nodeTol))
+    {
+        WarnMessage("Unable to create virtual gap ribbon segments.\n");
+        return false;
+    }
+
+    auto label = std::unique_ptr<CMBlockLabel>(new CMBlockLabel());
+    label->x = Re(0.5 * (a + b));
+    label->y = Im(0.5 * (a + b));
+    label->BlockType = materialIndex;
+    label->BlockTypeName = materialName;
+    label->InGroup = source.InGroup;
+    label->MaxArea = 0.25 * meshThickness * meshThickness;
+    if (!problem.addBlockLabel(std::move(label), nodeTol))
+    {
+        WarnMessage("Unable to place virtual gap block label inside ribbon.\n");
+        return false;
+    }
+
+    problem.updateLabelsFromIndex();
+    return true;
+}
+
+bool expandVirtualGapSegments(FemmProblem &problem, int (*WarnMessage)(const char*, ...))
+{
+    if (problem.filetype != femm::FileType::MagneticsFile)
+        return true;
+
+    bool hasVirtualGap = false;
+    for (const auto &seg : problem.linelist)
+    {
+        if (seg->VirtualGapEnabled)
+        {
+            hasVirtualGap = true;
+            break;
+        }
+    }
+
+    if (!hasVirtualGap)
+        return true;
+
+    if (problem.problemType != PLANAR)
+    {
+        WarnMessage("Virtual gap is currently implemented for planar magnetics problems only.\n");
+        return false;
+    }
+
+    problem.updateUndo();
+    problem.updateLineMap();
+    problem.updateBlockMap();
+    problem.updateLabelsFromIndex();
+
+    while (true)
+    {
+        int segIndex = -1;
+        for (int i = 0; i < static_cast<int>(problem.linelist.size()); ++i)
+        {
+            if (problem.linelist[i]->VirtualGapEnabled)
+            {
+                segIndex = i;
+                break;
+            }
+        }
+
+        if (segIndex < 0)
+            break;
+
+        if (!expandVirtualGapSegment(problem, segIndex, WarnMessage))
+        {
+            problem.undo();
+            return false;
+        }
+    }
+
+    problem.updateBlockMap();
+    problem.updateLabelsFromIndex();
+    return true;
+}
 
 /**
  * @brief The TriangulateHelper class encapsulates the interface to triangle,
@@ -731,6 +1053,9 @@ int FMesher::DoNonPeriodicBCTriangulation(string PathName)
     // calculate length used to kludge fine meshing near input node points
     dL = averageLineLength() / LineFraction;
 
+    if (!expandVirtualGapSegments(*problem, WarnMessage))
+        return -1;
+
     // copy node list as it is;
     for (const auto &node : problem->nodelist)
         nodelst.push_back(node->clone());
@@ -805,6 +1130,7 @@ int FMesher::DoNonPeriodicBCTriangulation(string PathName)
 
         triHelper.writeTriangulationFiles(PathName);
     }
+    problem->saveFEMFile(pn);
     problem->clearNotationTags();
 
     return 0;
@@ -855,6 +1181,9 @@ int FMesher::DoPeriodicBCTriangulation(string PathName)
 
     // calculate length used to kludge fine meshing near input node points
     dL = averageLineLength() / LineFraction;
+
+    if (!expandVirtualGapSegments(*problem, WarnMessage))
+        return -1;
 
     // copy node list as it is;
     for (const auto &node : problem->nodelist)

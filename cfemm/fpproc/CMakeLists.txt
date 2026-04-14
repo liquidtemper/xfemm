@@ -12,6 +12,17 @@ add_executable(fpproc-test
     )
 
 target_link_libraries(fpproc-test fpproc)
+
+add_executable(fpproc-vgap
+    vgap_benchmark.cpp
+    )
+
+target_link_libraries(fpproc-vgap fpproc)
+
+install(
+    TARGETS fpproc-vgap
+    RUNTIME DESTINATION bin
+    COMPONENT "cli")
 install(
     TARGETS fpproc-test
     RUNTIME DESTINATION bin

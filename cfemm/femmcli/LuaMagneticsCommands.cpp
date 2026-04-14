@@ -2039,7 +2039,7 @@ int femmcli::LuaMagneticsCommands::luaSetPrevious(lua_State *L)
 
         std::string prev = lua_tostring(L,1);
         doc->previousSolutionFile=prev;
-        doc->PrevType = (n > 1) ? static_cast<int>(lua_tonumber(L,2)) : 0;
+        doc->PrevType = (n > 1) ? static_cast<int>(lua_todouble(L,2)) : 0;
     }
 
     return 0;

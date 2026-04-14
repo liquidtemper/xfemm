@@ -502,6 +502,27 @@ ParserResult FemmReader<PointPropT,BoundaryPropT,BlockPropT,CircuitPropT,BlockLa
                 line = line.substr(pos);
                 segm.InGroup = std::stoi(line, &pos);
                 line = line.substr(pos);
+
+                trim(line);
+                if (problem->filetype == femm::FileType::MagneticsFile && !line.empty())
+                {
+                    segm.VirtualGapEnabled = (0 != std::stoi(line, &pos));
+                    line = line.substr(pos);
+                    trim(line);
+                    if (!line.empty())
+                    {
+                        segm.VirtualGapPhysical = std::stod(line, &pos);
+                        line = line.substr(pos);
+                    }
+                    trim(line);
+                    if (!line.empty())
+                    {
+                        segm.VirtualGapMesh = std::stod(line, &pos);
+                        line = line.substr(pos);
+                    }
+                    trim(line);
+                }
+
                 if (problem->filetype == femm::FileType::HeatFlowFile ||
                         problem->filetype == femm::FileType::ElectrostaticsFile )
                 {

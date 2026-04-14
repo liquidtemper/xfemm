@@ -184,7 +184,7 @@ void femm::FemmProblem::writeProblemDescription(std::ostream &output) const
     output << "[NumSegments] = " << linelist.size() <<"\n";
     for (const auto &line: linelist)
     {
-        // n0 n1 MaxSideLength BoundaryMarker Hidden Group [InConductor]
+        // n0 n1 MaxSideLength BoundaryMarker Hidden Group [VirtualGapEnabled VirtualGapPhysical VirtualGapMesh] [InConductor]
         output << line->n0 << "\t" << line->n1;
         if (line->MaxSideLength < 0)
         {
@@ -196,6 +196,13 @@ void femm::FemmProblem::writeProblemDescription(std::ostream &output) const
         output << "\t" << line->BoundaryMarker+1
             << "\t" << (int)line->Hidden
             << "\t" << line->InGroup;
+
+        if (filetype == FileType::MagneticsFile)
+        {
+            output << "\t" << (int)line->VirtualGapEnabled
+                   << "\t" << line->VirtualGapPhysical
+                   << "\t" << line->VirtualGapMesh;
+        }
 
         if ( filetype == FileType::HeatFlowFile ||
              filetype == FileType::ElectrostaticsFile )

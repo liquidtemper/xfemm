@@ -755,7 +755,7 @@ int FSolver::HarmonicAxisymmetric(CBigComplexLinProb &L,bool verbose)
             if (L.Precision<Precision) L.Precision=Precision;
         }
 
-        if (L.PBCGSolveMod(Iter,verbose)==0) return 0;
+        if (L.PBCGSolveMod(Iter)==0) return 0;
 
         if (LinearFlag==false)
         {

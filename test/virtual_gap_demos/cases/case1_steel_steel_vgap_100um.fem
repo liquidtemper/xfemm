@@ -1,0 +1,144 @@
+[Format]      =  4.0
+[Frequency]   =  0
+[Precision]   =  1e-08
+[MinAngle]    =  30
+[Depth]       =  20
+[LengthUnits] =  millimeters
+[ProblemType] =  planar
+[Coordinates] =  cartesian
+[ACSolver]    =  0
+[PrevSoln]    = ""
+[PrevType]    =  0
+[Comment]     =  "Case 1 steel-to-steel return path interruption"
+[PointProps]  =  0
+[BdryProps]   = 1
+  <BeginBdry>
+    <BdryName> = "A0"
+    <BdryType> = 0
+    <A_0> = 0
+    <A_1> = 0
+    <A_2> = 0
+    <Phi> = 0
+    <c0> = 0
+    <c0i> = 0
+    <c1> = 0
+    <c1i> = 0
+    <Mu_ssd> = 0
+    <Sigma_ssd> = 0
+  <EndBdry>
+[BlockProps]  = 3
+  <BeginBlock>
+    <BlockName> = "Air"
+    <Mu_x> = 1
+    <Mu_y> = 1
+    <H_c> = 0
+    <H_cAngle> = 0
+    <J_re> = 0
+    <J_im> = 0
+    <Sigma> = 0
+    <d_lam> = 0
+    <Phi_h> = 0
+    <Phi_hx> = 0
+    <Phi_hy> = 0
+    <LamType> = 0
+    <LamFill> = 1
+    <NStrands> = 0
+    <WireD> = 0
+    <BHPoints> = 0
+  <EndBlock>
+  <BeginBlock>
+    <BlockName> = "SteelLinear"
+    <Mu_x> = 4000
+    <Mu_y> = 4000
+    <H_c> = 0
+    <H_cAngle> = 0
+    <J_re> = 0
+    <J_im> = 0
+    <Sigma> = 0
+    <d_lam> = 0
+    <Phi_h> = 0
+    <Phi_hx> = 0
+    <Phi_hy> = 0
+    <LamType> = 0
+    <LamFill> = 1
+    <NStrands> = 0
+    <WireD> = 0
+    <BHPoints> = 0
+  <EndBlock>
+  <BeginBlock>
+    <BlockName> = "Copper"
+    <Mu_x> = 1
+    <Mu_y> = 1
+    <H_c> = 0
+    <H_cAngle> = 0
+    <J_re> = 0
+    <J_im> = 0
+    <Sigma> = 58
+    <d_lam> = 0
+    <Phi_h> = 0
+    <Phi_hx> = 0
+    <Phi_hy> = 0
+    <LamType> = 0
+    <LamFill> = 1
+    <NStrands> = 0
+    <WireD> = 0
+    <BHPoints> = 0
+  <EndBlock>
+[CircuitProps]  = 1
+  <BeginCircuit>
+    <CircuitName> = "coil"
+    <TotalAmps_re> = 1
+    <TotalAmps_im> = 0
+    <CircuitType> = 1
+  <EndCircuit>
+[NumPoints] = 20
+-20	-20	0	0
+100	-20	0	0
+100	120	0	0
+-20	120	0	0
+0	0	0	0
+80	0	0	0
+80	80	0	0
+60	80	0	0
+60	20	0	0
+20	20	0	0
+20	80	0	0
+0	80	0	0
+80	100	0	0
+0	100	0	0
+64	50	0	0
+76	50	0	0
+24	28	0	0
+36	28	0	0
+36	72	0	0
+24	72	0	0
+[NumSegments] = 21
+0	1	-1	1	0	900	0	0	-1
+1	2	-1	1	0	900	0	0	-1
+2	3	-1	1	0	900	0	0	-1
+3	0	-1	1	0	900	0	0	-1
+4	5	-1	0	0	10	0	0	-1
+5	6	-1	0	0	10	0	0	-1
+6	7	-1	0	0	10	0	0	-1
+7	8	-1	0	0	10	0	0	-1
+8	9	-1	0	0	10	0	0	-1
+9	10	-1	0	0	10	0	0	-1
+10	11	-1	0	0	10	0	0	-1
+11	4	-1	0	0	10	0	0	-1
+10	7	-1	0	0	11	0	0	-1
+6	12	-1	0	0	11	0	0	-1
+12	13	-1	0	0	11	0	0	-1
+13	11	-1	0	0	11	0	0	-1
+14	15	-1	0	0	15	1	0.10000000000000001	0.5
+16	17	-1	0	0	20	0	0	-1
+17	18	-1	0	0	20	0	0	-1
+18	19	-1	0	0	20	0	0	-1
+19	16	-1	0	0	20	0	0	-1
+[NumArcSegments] = 0
+[NumHoles] = 0
+[NumBlockLabels] = 5
+10	10	2	4	0	0	10	1	0
+10	90	2	4	0	0	11	1	0
+30	50	3	2	1	0	20	200	0
+50	50	1	3	0	0	30	1	0
+-10	-10	1	6	0	0	31	1	0

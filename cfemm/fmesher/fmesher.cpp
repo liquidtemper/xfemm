@@ -186,6 +186,14 @@ bool FMesher::SaveFEMFile(string PathName)
 
         fprintf(fp,"%i\t%i\t%i",t,problem->linelist[i]->Hidden,problem->linelist[i]->InGroup);
 
+        if (problem->filetype == femm::FileType::MagneticsFile)
+        {
+            fprintf(fp,"\t%i\t%.17g\t%.17g",
+                    problem->linelist[i]->VirtualGapEnabled ? 1 : 0,
+                    problem->linelist[i]->VirtualGapPhysical,
+                    problem->linelist[i]->VirtualGapMesh);
+        }
+
         if (problem->filetype == femm::FileType::HeatFlowFile
                 || problem->filetype == femm::FileType::ElectrostaticsFile )
         {

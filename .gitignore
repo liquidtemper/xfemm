@@ -3,6 +3,7 @@ cfemm/Testing/Temporary/
 mfemm/xfemm_mex_files_for_glnxa64/
 mfemm/xfemm_mex_files_for_gnu-linux-x86_64/
 cfemm/build/
+build/
 cfemm/bin/
 *.asv
 *.o
@@ -15,3 +16,7 @@ cfemm/libfemm/femmversion.h
 *.a
 *.result.ans
 *.result.fem
+__pycache__/
+*.pyc
+test/virtual_gap_demos/out/
+test/virtual_gap_demos/tmp_*.lua
